@@ -216,6 +216,7 @@ def load_trained_models():
 
 
 def render_prediction_chart(results_df):
+    st.markdown("</div>", unsafe_allow_html=True)
     labels = results_df["model"].tolist()
     confidences = results_df["patient_confidence"].tolist()
     predictions = results_df["patient_prediction"].tolist()
@@ -224,12 +225,29 @@ def render_prediction_chart(results_df):
         for prediction in predictions
     ]
 
-    fig, ax = plt.subplots(figsize=(12, 5.8))
+    fig, ax = plt.subplots(
+        figsize=(10,6),
+        facecolor="white"
+    )
+    fig, ax = plt.subplots(
+    figsize=(10,6),
+    facecolor="white"
+    )
+
+    fig.patch.set_edgecolor("#222")
+    fig.patch.set_linewidth(5)
+
+    ax.set_facecolor("white")
+
+    for spine in ax.spines.values():
+        spine.set_linewidth(2)
+        spine.set_color("black")
+
     bars = ax.bar(labels, confidences, color=colors, edgecolor="#222", linewidth=1.2)
 
     ax.set_title("Model Predictions", loc="left", fontsize=18, pad=12)
     ax.set_ylabel("Prediction Confidence", fontsize=12)
-    ax.set_xlabel("Model", fontsize=12, labelpad=18)
+    ax.set_xlabel("")
     ax.set_ylim(0, 1.08)
     ax.set_yticks([0, 0.2, 0.4, 0.6, 0.8, 1.0])
     ax.grid(axis="y", color="#d8d8d8", linestyle="-", linewidth=0.8, alpha=0.7)
@@ -264,31 +282,7 @@ def render_prediction_chart(results_df):
     st.pyplot(fig, clear_figure=True)
 
 
-def render_result_metrics(results_df):
-    best_confidence = results_df.sort_values(
-        by="patient_confidence",
-        ascending=False,
-    ).iloc[0]
-    best_validation = results_df.sort_values(
-        by="val_accuracy",
-        ascending=False,
-    ).iloc[0]
-    disease_votes = int((results_df["patient_prediction"] == "Heart Disease").sum())
-    no_disease_votes = int((results_df["patient_prediction"] == "No Heart Disease").sum())
 
-    metric_cols = st.columns(4)
-    metric_cols[0].metric(
-        "Top Confidence",
-        best_confidence["model"],
-        f"{best_confidence['patient_confidence']:.0%}",
-    )
-    metric_cols[1].metric(
-        "Top Val Accuracy",
-        best_validation["model"],
-        f"{best_validation['val_accuracy']:.0%}",
-    )
-    metric_cols[2].metric("Heart Disease Votes", disease_votes)
-    metric_cols[3].metric("No Disease Votes", no_disease_votes)
 
 
 def render_input_form():
@@ -409,11 +403,8 @@ def render_page():
                 background: #ffffff;
             }
             .main-title {
-                color: #ef3124;
-                font-size: 64px;
-                font-weight: 800;
-                line-height: 1;
-                margin: 0 0 24px;
+                color: #ff0000 !important;
+                opacity: 1 !important;
             }
             section[data-testid="stSidebar"] {
                 display: none;
@@ -437,21 +428,12 @@ def render_page():
                 border-color: #454545;
             }
             .prediction-panel {
-                border: 6px solid #222;
-                border-radius: 2px;
-                padding: 4px 10px 12px;
+                border: 3px solid #222;
+                border-radius: 6px;
+                padding: 12px;
                 background: #ffffff;
             }
-            .panel-chip {
-                display: inline-block;
-                background: #333333;
-                color: #f4f4f4;
-                padding: 9px 16px;
-                border-radius: 0 0 6px 0;
-                font-size: 22px;
-                font-weight: 800;
-                margin: -4px 0 4px -10px;
-            }
+                        
             div[data-testid="stMetric"] {
                 background: #f7f7f7;
                 border: 1px solid #dedede;
@@ -467,18 +449,17 @@ def render_page():
 
     st.markdown('<h1 class="main-title">Web App Demo</h1>', unsafe_allow_html=True)
 
-    left_col, right_col = st.columns([1.05, 1.15], gap="large")
+    left_col, right_col = st.columns([1, 1.4], gap="medium")
 
     with left_col:
         patient_values, predict_clicked = render_input_form()
 
     with right_col:
-        st.markdown('<div class="prediction-panel">', unsafe_allow_html=True)
+        
         st.markdown(
-            '<div class="panel-chip">Model Predictions Overview</div>',
+            "<h2 style='color:#111;'>📊 Model Predictions Overview</h2>",
             unsafe_allow_html=True,
         )
-
         if "patient_values" not in st.session_state:
             st.session_state["patient_values"] = EXAMPLES["Example 1 (No Heart Disease)"]
         if predict_clicked:
@@ -491,17 +472,24 @@ def render_page():
         results_df = evaluate_models(models, x_val, y_val, x_test, y_test, new_patient)
 
         render_prediction_chart(results_df)
-        render_result_metrics(results_df)
+        st.markdown("""
+            <div style="color:black;">
 
-        display_df = results_df.copy()
-        display_df["val_accuracy"] = display_df["val_accuracy"].map("{:.2%}".format)
-        display_df["test_accuracy"] = display_df["test_accuracy"].map("{:.2%}".format)
-        display_df["patient_confidence"] = display_df["patient_confidence"].map(
-            "{:.2%}".format,
-        )
-        st.dataframe(display_df, hide_index=True, width="stretch")
+            <p style="font-size:20px;">DecisionTreeClassifier</p>
 
-        st.markdown("</div>", unsafe_allow_html=True)
+            <p style="font-size:20px;">AdaBoostClassifier</p>
+
+            <p style="font-size:20px;">RandomForestClassifier</p>
+
+            <p style="font-size:20px;">GradientBoostingClassifier</p>
+
+            <p style="font-size:20px;">XGBClassifier</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    
+
+        
 
 
 if __name__ == "__main__":
